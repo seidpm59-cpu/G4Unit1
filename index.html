@@ -533,7 +533,7 @@ function qExpandedToStandard(){
   const distract = [makeNumberNear(n,9000), makeNumberNear(n,50000), n + 1000].map(fmt);
   return {
     skillLabel:'Expanded Form Door',
-    question:'Which standard-form number opens this scroll?',
+    question:'Which standard-form number encoded here opens the scroll?',
     answer:fmt(n),
     options:makeOptions(fmt(n), distract),
     visual:renderScroll(exp),
