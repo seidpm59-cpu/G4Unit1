@@ -503,7 +503,7 @@ function qPlaceValue(){
   const distract = [ds[idx], placeValues[idx], value/10, value*10].filter(v=>v>0 && v<=900000).map(fmt);
   return {
     skillLabel:'Place Value Lock',
-    question:`What is the value of the digit ${ds[idx]} in ${fmt(n)}?`,
+    question:`The highlighted digit is ${ds[idx]} in ${fmt(n)}?`,
     answer:fmt(value),
     options:makeOptions(fmt(value), distract),
     visual:renderPlaceTable(n, idx),
