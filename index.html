@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hogwarts Number Quest: The Million-Vault</title>
+<style>
+  :root{
+    --ink:#f7f0d0;
+    --muted:#cfc4ef;
+    --gold:#f5d76e;
+    --gold2:#ffcc33;
+    --purple:#1e1b2f;
+    --deep:#0f1021;
+    --blue:#5ac8fa;
+    --green:#7be495;
+    --red:#ff7a7a;
+    --panel:rgba(14,12,35,.78);
+    --panel2:rgba(255,255,255,.055);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:"Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    color:var(--ink);
+    text-align:center;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(255,214,91,.16), transparent 30%),
+      radial-gradient(circle at 85% 12%, rgba(90,200,250,.14), transparent 24%),
+      linear-gradient(140deg,#0d1022 0%,#1e1b2f 48%,#100b1d 100%);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  body:before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background-image:
+      radial-gradient(circle, rgba(255,255,255,.38) 0 1px, transparent 1.6px),
+      radial-gradient(circle, rgba(245,215,110,.3) 0 1px, transparent 1.5px);
+    background-size:70px 70px, 113px 113px;
+    animation: drift 18s linear infinite;
+    opacity:.28;
+  }
+  @keyframes drift{from{background-position:0 0, 0 0;}to{background-position:140px -140px, -113px 113px;}}
+  .screen{max-width:1050px;margin:0 auto;padding:22px 16px 34px;position:relative;z-index:1;}
+  .hidden{display:none!important;}
+  .hero{
+    margin:12px auto 18px;
+    padding:24px 18px;
+    max-width:950px;
+    border:1px solid rgba(245,215,110,.35);
+    border-radius:24px;
+    background:linear-gradient(180deg, rgba(33,26,62,.86), rgba(12,10,27,.86));
+    box-shadow:0 22px 70px rgba(0,0,0,.42), inset 0 0 35px rgba(245,215,110,.06);
+  }
+  h1{font-size:clamp(34px, 6vw, 62px);line-height:.95;margin:8px 0 10px;text-shadow:0 0 18px rgba(245,215,110,.45);}
+  h2{font-size:clamp(28px, 4vw, 42px);margin:10px 0;color:var(--gold);}
+  p{line-height:1.48;}
+  .tagline{font-size:20px;color:#ede1a7;margin:8px auto 4px;max-width:720px;}
+  .mission{font-size:15px;color:var(--muted);max-width:760px;margin:8px auto 0;}
+  button{
+    border:0;
+    border-radius:14px;
+    padding:12px 17px;
+    margin:6px;
+    color:white;
+    font-size:16px;
+    font-weight:800;
+    cursor:pointer;
+    background:linear-gradient(135deg,#5a4ea3,#7e6de0);
+    box-shadow:0 8px 18px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.14);
+    transition:transform .12s ease, filter .12s ease;
+  }
+  button:hover{transform:translateY(-1px);filter:brightness(1.07);}
+  button:active{transform:translateY(1px) scale(.99);}
+  .start-btn{font-size:21px;padding:15px 28px;background:linear-gradient(135deg,#b8860b,#ffcc33,#8c5c05);color:#201000;text-shadow:0 1px 0 rgba(255,255,255,.35);}
+  .ghost-btn{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);color:#f5f1ff;box-shadow:none;}
+  input{
+    width:min(92%,540px);
+    padding:13px 16px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.95);
+    color:#14142a;
+    font-size:20px;
+    text-align:center;
+    outline:none;
+    box-shadow:0 8px 18px rgba(0,0,0,.22);
+  }
+  input:focus{box-shadow:0 0 0 3px rgba(245,215,110,.35), 0 8px 18px rgba(0,0,0,.22);}
+  .hud{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(130px,1fr));
+    gap:10px;
+    margin:12px auto;
+    max-width:980px;
+  }
+  .hud-card{
+    padding:10px 12px;
+    border-radius:16px;
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,.13);
+    box-shadow:0 10px 24px rgba(0,0,0,.22);
+  }
+  .hud-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+  .hud-value{font-size:22px;font-weight:900;color:var(--gold);margin-top:2px;}
+  .locks{
+    display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px auto 14px;
+    max-width:780px;
+  }
+  .lock{
+    width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);font-size:18px;
+  }
+  .lock.open{background:linear-gradient(135deg,#f5d76e,#ffb83d);color:#1a1022;box-shadow:0 0 16px rgba(245,215,110,.45);}
+  .lock.missed{background:rgba(255,122,122,.2);border-color:rgba(255,122,122,.55);}
+  .arena{
+    max-width:980px;
+    margin:0 auto;
+    padding:18px;
+    border-radius:22px;
+    background:linear-gradient(180deg,rgba(21,18,48,.86),rgba(10,10,26,.86));
+    border:1px solid rgba(245,215,110,.26);
+    box-shadow:0 24px 70px rgba(0,0,0,.38);
+    position:relative;
+    overflow:hidden;
+  }
+  .arena:before{
+    content:"";position:absolute;inset:-40px;background:radial-gradient(circle at var(--spark-x,50%) var(--spark-y,50%),rgba(245,215,110,.13),transparent 26%);pointer-events:none;
+  }
+  .challenge-chip{
+    display:inline-flex;gap:8px;align-items:center;
+    background:rgba(245,215,110,.12);
+    color:#fff1a8;
+    border:1px solid rgba(245,215,110,.25);
+    padding:7px 12px;border-radius:999px;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  }
+  .question{
+    font-size:clamp(22px,3vw,34px);
+    font-weight:800;
+    line-height:1.25;
+    margin:15px auto 12px;
+    max-width:880px;
+  }
+  .visual{
+    min-height:126px;
+    display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:12px;
+    margin:10px auto 12px;
+  }
+  .place-table{
+    display:grid;
+    grid-template-columns:repeat(6,minmax(85px,1fr));
+    gap:3px;
+    width:min(100%,830px);
+    margin:0 auto;
+    border-radius:16px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.18);
+  }
+  .pv-cell{background:rgba(255,255,255,.1);padding:10px 5px;min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
+  .pv-head{font-size:12px;color:#d7cff6;text-transform:uppercase;letter-spacing:.04em;}
+  .pv-digit{font-size:31px;font-weight:950;color:white;line-height:1;}
+  .pv-value{font-size:12px;color:#b7ffca;}
+  .pv-cell.focus{background:linear-gradient(180deg,rgba(245,215,110,.45),rgba(245,215,110,.16));box-shadow:inset 0 0 0 3px rgba(245,215,110,.68);animation: pulse 1s ease-in-out infinite alternate;}
+  @keyframes pulse{from{filter:drop-shadow(0 0 3px rgba(245,215,110,.3));}to{filter:drop-shadow(0 0 14px rgba(245,215,110,.75));}}
+  .scroll{
+    max-width:850px;
+    margin:0 auto;
+    color:#20160a;
+    background:linear-gradient(180deg,#f7e8b5,#d8b96d);
+    border:3px solid #9b6c18;
+    border-radius:18px;
+    padding:18px;
+    box-shadow:0 8px 0 #7a4d0d,0 16px 30px rgba(0,0,0,.34);
+    font-weight:900;
+    font-size:clamp(20px,3.5vw,36px);
+  }
+  .number-line-wrap{width:min(94%,850px);margin:4px auto;color:#fff;}
+  .line-labels{display:flex;justify-content:space-between;margin-top:-6px;color:#f9e79f;font-weight:800;}
+  .line-caption{font-size:14px;color:#d7cff6;margin-top:5px;}
+  .options{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    max-width:880px;
+    margin:13px auto 4px;
+  }
+  .option-btn{
+    min-height:58px;
+    padding:11px 13px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.15);
+    background:rgba(255,255,255,.09);
+    color:#fff;
+    font-size:clamp(16px,2vw,20px);
+    box-shadow:0 8px 18px rgba(0,0,0,.22);
+  }
+  .option-btn:hover{background:rgba(245,215,110,.18);}
+  .submit-row{margin-top:12px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;}
+  .feedback{
+    min-height:44px;margin:14px auto 0;font-size:21px;font-weight:900;line-height:1.4;
+  }
+  .feedback.good{color:#96ffac;text-shadow:0 0 12px rgba(123,228,149,.35);}
+  .feedback.bad{color:#ffb1b1;text-shadow:0 0 12px rgba(255,122,122,.3);}
+  .dragon-area{position:relative;height:70px;margin:2px auto 4px;max-width:900px;overflow:hidden;}
+  .dragon{position:absolute;left:0;top:10px;font-size:42px;filter:drop-shadow(0 0 8px rgba(255,122,122,.35));transition:left .45s ease;}
+  .vault{position:absolute;right:8px;top:14px;font-size:40px;filter:drop-shadow(0 0 8px rgba(245,215,110,.42));}
+  .trail{position:absolute;left:60px;right:70px;top:42px;height:4px;border-radius:99px;background:linear-gradient(90deg,rgba(255,122,122,.8),rgba(245,215,110,.5),rgba(123,228,149,.8));opacity:.75;}
+  .hint-card,.history-card{
+    max-width:950px;margin:16px auto 0;padding:12px 14px;border-radius:16px;
+    border:1px solid rgba(255,215,0,.22);background:rgba(10,8,26,.62);box-shadow:0 0 18px rgba(255,215,0,.08);text-align:left;
+  }
+  .hint-header,.history-header{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;user-select:none;}
+  .hint-title,.history-title{color:#f7d774;font-weight:900;letter-spacing:.05em;text-transform:uppercase;font-size:14px;}
+  .hint-body,.history-body{display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);color:#e7ddff;line-height:1.48;}
+  .hint-body.active,.history-body.active{display:block;}
+  .hint-step{margin:8px 0;}
+  .history-line{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px;line-height:1.35;}
+  .history-line:last-child{border-bottom:none;}
+  .history-meta{font-size:12px;color:rgba(255,255,255,.65);margin-top:3px;font-style:italic;}
+  .ok{color:#9dffad;font-weight:900}.no{color:#ff9e9e;font-weight:900}
+  .mini-grid{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:10px;margin:16px auto;max-width:880px;}
+  .feature{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px;}
+  .feature strong{color:var(--gold);display:block;margin-bottom:4px;}
+  .final-card{max-width:760px;margin:18px auto;padding:20px;border-radius:22px;background:var(--panel);border:1px solid rgba(245,215,110,.3);box-shadow:0 20px 60px rgba(0,0,0,.35);}
+  .spark-pop{position:absolute;pointer-events:none;animation:pop .7s ease-out forwards;font-size:24px;}
+  @keyframes pop{from{opacity:1;transform:translate(-50%,-50%) scale(.7);}to{opacity:0;transform:translate(-50%,-120%) scale(1.5);}}
+  @media(max-width:760px){
+    .hud{grid-template-columns:repeat(2,minmax(130px,1fr));}
+    .options{grid-template-columns:1fr;}
+    .place-table{grid-template-columns:repeat(3,minmax(85px,1fr));}
+    .mini-grid{grid-template-columns:1fr 1fr;}
+    .question{font-size:23px;}
+  }
+</style>
+</head>
+<body>
+  <div class="screen" id="startScreen">
+    <div class="hero">
+      <h1>🏰 Hogwarts Number Quest</h1>
+      <h2>The Million-Vault</h2>
+      <p class="tagline">Break ten enchanted locks before the Gringotts dragon wakes.</p>
+      <p class="mission">Use place value, expanded form, standard form, word form, ten-times thinking, rounding, comparing, and ordering numbers up to 1,000,000.</p>
+      <div class="mini-grid">
+        <div class="feature"><strong>🔢 Place Value</strong>Find the value of a digit.</div>
+        <div class="feature"><strong>📜 Forms</strong>Standard, expanded, and word form.</div>
+        <div class="feature"><strong>⚡ Ten Times</strong>Move one place left.</div>
+        <div class="feature"><strong>🧭 Rounding</strong>Use a number line to estimate.</div>
+      </div>
+      <button class="start-btn" onclick="startGame()">Enter the Million-Vault</button>
+      <button class="ghost-btn" onclick="toggleHistory('home')">📖 Open Quest Ledger</button>
+    </div>
+    <div class="history-card">
+      <div class="history-header" onclick="toggleHistory('home')">
+        <div class="history-title">📖 Quest Ledger</div><div id="homeChevron">▼</div>
+      </div>
+      <div class="history-body" id="homeHistory"><div id="homeHistoryLines" class="history-meta">No quests yet.</div></div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="gameScreen">
+    <div class="hud">
+      <div class="hud-card"><div class="hud-label">Vault Lock</div><div class="hud-value"><span id="roundNum">1</span>/10</div></div>
+      <div class="hud-card"><div class="hud-label">House Points</div><div class="hud-value" id="scoreBox">0</div></div>
+      <div class="hud-card"><div class="hud-label">Streak</div><div class="hud-value" id="streakBox">0</div></div>
+      <div class="hud-card"><div class="hud-label">Dragon Alert</div><div class="hud-value" id="dragonBox">Sleeping</div></div>
+    </div>
+    <div class="locks" id="locks"></div>
+    <div class="dragon-area">
+      <div class="trail"></div>
+      <div class="dragon" id="dragon">🐉</div>
+      <div class="vault">🔐</div>
+    </div>
+
+    <div class="arena" id="arena">
+      <div class="challenge-chip" id="skillChip">Skill</div>
+      <div class="question" id="questionText">Question appears here.</div>
+      <div class="visual" id="visual"></div>
+      <div class="options" id="options"></div>
+      <div class="submit-row">
+        <input id="answerInput" placeholder="Type an answer or choose a spell tile" onkeydown="if(event.key==='Enter') checkAnswer();" />
+        <button onclick="checkAnswer()">Cast Spell</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="hint-card" id="hintCard">
+      <div class="hint-header" onclick="toggleHint()"><div class="hint-title">💡 Strategy Charm</div><div id="hintChevron">▼</div></div>
+      <div class="hint-body" id="hintBody"></div>
+    </div>
+
+    <div class="history-card">
+      <div class="history-header" onclick="toggleHistory('game')">
+        <div class="history-title">📖 Quest Ledger</div><div id="gameChevron">▼</div>
+      </div>
+      <div class="history-body" id="gameHistory"><div id="historyLines" class="history-meta">No quests yet.</div></div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="endScreen">
+    <div class="final-card">
+      <h1 id="endTitle">Vault Opened!</h1>
+      <p id="endSummary" class="tagline"></p>
+      <p id="endMessage" class="mission"></p>
+      <button class="start-btn" onclick="startGame()">Play Again</button>
+      <button class="ghost-btn" onclick="resetHistory()">Clear Ledger</button>
+    </div>
+    <div class="history-card">
+      <div class="history-header" onclick="toggleHistory('end')">
+        <div class="history-title">📖 Quest Ledger</div><div id="endChevron">▼</div>
+      </div>
+      <div class="history-body active" id="endHistory"><div id="endHistoryLines"></div></div>
+    </div>
+  </div>
+
+<script>
+let score = 0;
+let streak = 0;
+let round = 0;
+let wrong = 0;
+let current = null;
+let locked = false;
+let historyLog = [];
+const totalRounds = 10;
+
+const placeNames = ["hundred thousands", "ten thousands", "thousands", "hundreds", "tens", "ones"];
+const placeValues = [100000,10000,1000,100,10,1];
+const skillOrder = ["place", "expandedToStandard", "standardToExpanded", "wordToStandard", "tenTimes", "rounding", "compare", "order", "roundEstimate", "finalMix"];
+
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]); }
+function fmt(n){ return Number(n).toLocaleString('en-US'); }
+function unfmt(s){ return String(s || '').replace(/,/g,'').replace(/\s+/g,'').toLowerCase(); }
+function normalize(s){ return unfmt(s).replace(/–|—/g,'-').replace(/\+/g,'plus').replace(/=/g,'equals'); }
+function digitsOf(n){ return String(n).padStart(6,'0').split('').map(Number); }
+function randomNumber(){ return randInt(102345,987654); }
+function randomFriendlyNumber(){ return [100,120,150,160,180,200,240,250,300,400,500,600,750,800,900][randInt(0,14)] * 1000 / 1000; }
+function roundTo(n, place){ return Math.round(n/place)*place; }
+
+function numberToWords(n){
+  const ones = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  const tens = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+  function underThousand(x){
+    let parts=[];
+    if(x>=100){ parts.push(ones[Math.floor(x/100)] + " hundred"); x%=100; }
+    if(x>=20){ parts.push(tens[Math.floor(x/10)]); x%=10; if(x) parts.push(ones[x]); }
+    else if(x>0){ parts.push(ones[x]); }
+    return parts.join(" ");
+  }
+  if(n===0) return "zero";
+  const thousands = Math.floor(n/1000);
+  const rest = n%1000;
+  let out=[];
+  if(thousands) out.push(underThousand(thousands) + " thousand");
+  if(rest) out.push(underThousand(rest));
+  return out.join(", ");
+}
+
+function expandedForm(n){
+  const ds = digitsOf(n);
+  const parts=[];
+  ds.forEach((d,i)=>{ if(d>0) parts.push(fmt(d*placeValues[i])); });
+  return parts.join(" + ");
+}
+
+function makeNumberNear(n, spread=4000){
+  let out = n + randInt(-spread,spread);
+  out = Math.max(100001, Math.min(999999, out));
+  if(out === n) out += 111;
+  return out;
+}
+
+function makeOptions(correct, distractors){
+  const clean = [];
+  [correct, ...distractors].forEach(x=>{
+    const sx = String(x);
+    if(!clean.some(v=>normalize(v) === normalize(sx))) clean.push(sx);
+  });
+  while(clean.length < 4){ clean.push(String(makeNumberNear(parseInt(unfmt(correct)) || randomNumber(), 9999))); }
+  return shuffle(clean.slice(0,4));
+}
+
+function renderPlaceTable(n, focusIndex=-1){
+  const ds = digitsOf(n);
+  return `<div class="place-table">${ds.map((d,i)=>`<div class="pv-cell ${i===focusIndex?'focus':''}"><div class="pv-head">${placeNames[i]}</div><div class="pv-digit">${d}</div><div class="pv-value">${fmt(d*placeValues[i])}</div></div>`).join('')}</div>`;
+}
+
+function renderScroll(text){ return `<div class="scroll">${text}</div>`; }
+
+function renderNumberLine(n, place){
+  const low = Math.floor(n/place)*place;
+  const high = low + place;
+  const mid = low + place/2;
+  const pct = Math.max(2, Math.min(98, ((n-low)/place)*100));
+  return `<div class="number-line-wrap">
+    <svg viewBox="0 0 800 130" width="100%" height="130" role="img" aria-label="number line">
+      <line x1="60" y1="70" x2="740" y2="70" stroke="#f7f0d0" stroke-width="5" stroke-linecap="round"/>
+      <line x1="60" y1="55" x2="60" y2="88" stroke="#f7f0d0" stroke-width="5"/>
+      <line x1="400" y1="50" x2="400" y2="92" stroke="#f5d76e" stroke-width="4"/>
+      <line x1="740" y1="55" x2="740" y2="88" stroke="#f7f0d0" stroke-width="5"/>
+      <circle cx="${60 + pct*6.8}" cy="70" r="12" fill="#5ac8fa" stroke="#fff" stroke-width="3" class="glow"/>
+      <text x="${60 + pct*6.8}" y="35" fill="#5ac8fa" font-size="24" text-anchor="middle" font-weight="900">${fmt(n)}</text>
+      <text x="60" y="118" fill="#f5d76e" font-size="22" text-anchor="middle" font-weight="900">${fmt(low)}</text>
+      <text x="400" y="118" fill="#f5d76e" font-size="20" text-anchor="middle" font-weight="900">midpoint</text>
+      <text x="740" y="118" fill="#f5d76e" font-size="22" text-anchor="middle" font-weight="900">${fmt(high)}</text>
+    </svg>
+    <div class="line-caption">The middle decides whether the number rounds down or up.</div>
+  </div>`;
+}
+
+function renderDragon(){
+  const pct = Math.min(82, wrong * 23);
+  document.getElementById('dragon').style.left = pct + '%';
+  document.getElementById('dragonBox').textContent = wrong === 0 ? 'Sleeping' : wrong === 1 ? 'Stirring' : wrong === 2 ? 'Snorting' : 'Awake!';
+}
+
+function renderLocks(){
+  const box = document.getElementById('locks');
+  let html='';
+  for(let i=1;i<=totalRounds;i++){
+    const cls = i <= round-1 ? 'open' : '';
+    html += `<div class="lock ${cls}">${i <= round-1 ? '✨' : '🔒'}</div>`;
+  }
+  box.innerHTML = html;
+}
+
+function popSpark(text){
+  const arena = document.getElementById('arena');
+  const s = document.createElement('div');
+  s.className = 'spark-pop';
+  s.textContent = text;
+  s.style.left = randInt(20,80) + '%';
+  s.style.top = randInt(25,75) + '%';
+  arena.appendChild(s);
+  setTimeout(()=>s.remove(),800);
+}
+
+function startGame(){
+  score = 0; streak = 0; round = 0; wrong = 0; locked = false; current = null;
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('endScreen').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+  loadQuestion();
+}
+
+function loadQuestion(){
+  locked = false;
+  round++;
+  if(round > totalRounds){ endGame(); return; }
+  document.getElementById('roundNum').textContent = round;
+  document.getElementById('scoreBox').textContent = score;
+  document.getElementById('streakBox').textContent = streak;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('answerInput').value = '';
+  renderDragon();
+  renderLocks();
+
+  const skill = skillOrder[round-1] === 'finalMix' ? shuffle(skillOrder.slice(0,9))[0] : skillOrder[round-1];
+  current = buildQuestion(skill);
+  document.getElementById('skillChip').textContent = current.skillLabel;
+  document.getElementById('questionText').textContent = current.question;
+  document.getElementById('visual').innerHTML = current.visual || '';
+  document.getElementById('hintBody').innerHTML = current.hint || '';
+  document.getElementById('hintBody').classList.remove('active');
+  document.getElementById('hintChevron').textContent = '▼';
+  renderOptions(current.options || []);
+}
+
+function renderOptions(opts){
+  const div = document.getElementById('options');
+  div.innerHTML = '';
+  opts.forEach(opt=>{
+    const b = document.createElement('button');
+    b.className = 'option-btn';
+    b.textContent = opt;
+    b.onclick = () => { document.getElementById('answerInput').value = opt; checkAnswer(); };
+    div.appendChild(b);
+  });
+}
+
+function buildQuestion(skill){
+  if(skill === 'place') return qPlaceValue();
+  if(skill === 'expandedToStandard') return qExpandedToStandard();
+  if(skill === 'standardToExpanded') return qStandardToExpanded();
+  if(skill === 'wordToStandard') return qWordToStandard();
+  if(skill === 'tenTimes') return qTenTimes();
+  if(skill === 'rounding') return qRounding();
+  if(skill === 'compare') return qCompare();
+  if(skill === 'order') return qOrder();
+  if(skill === 'roundEstimate') return qRoundEstimate();
+  return qPlaceValue();
+}
+
+function qPlaceValue(){
+  let n = randomNumber();
+  let ds = digitsOf(n);
+  let idx;
+  do { idx = randInt(0,5); } while(ds[idx] === 0);
+  const value = ds[idx] * placeValues[idx];
+  const distract = [ds[idx], placeValues[idx], value/10, value*10].filter(v=>v>0 && v<=900000).map(fmt);
+  return {
+    skillLabel:'Place Value Lock',
+    question:`What is the value of the digit ${ds[idx]} in ${fmt(n)}?`,
+    answer:fmt(value),
+    options:makeOptions(fmt(value), distract),
+    visual:renderPlaceTable(n, idx),
+    hint:`<div class="hint-step"><strong>Find the column first.</strong> The digit ${ds[idx]} is in the <strong>${placeNames[idx]}</strong> place.</div><div class="hint-step">Its value is <strong>${ds[idx]} × ${fmt(placeValues[idx])}</strong>.</div>`
+  };
+}
+
+function qExpandedToStandard(){
+  const n = randomNumber();
+  const exp = expandedForm(n);
+  const distract = [makeNumberNear(n,9000), makeNumberNear(n,50000), n + 1000].map(fmt);
+  return {
+    skillLabel:'Expanded Form Door',
+    question:'Which standard-form number opens this scroll?',
+    answer:fmt(n),
+    options:makeOptions(fmt(n), distract),
+    visual:renderScroll(exp),
+    hint:`<div class="hint-step"><strong>Expanded form</strong> splits a number into its place-value parts.</div><div class="hint-step">Add the parts back together to make the standard-form number.</div>`
+  };
+}
+
+function qStandardToExpanded(){
+  const n = randomNumber();
+  const ans = expandedForm(n);
+  const d1 = expandedForm(makeNumberNear(n,1000));
+  const d2 = expandedForm(makeNumberNear(n,10000));
+  const d3 = expandedForm(makeNumberNear(n,100000));
+  return {
+    skillLabel:'Standard to Expanded',
+    question:`Which spell shows ${fmt(n)} in expanded form?`,
+    answer:ans,
+    options:makeOptions(ans,[d1,d2,d3]),
+    visual:renderPlaceTable(n),
+    hint:`<div class="hint-step">Look at each digit's place.</div><div class="hint-step">Write only the nonzero place values, then join them with plus signs.</div>`
+  };
+}
+
+function qWordToStandard(){
+  const n = randomNumber();
+  const words = numberToWords(n);
+  const distract = [makeNumberNear(n,1000), makeNumberNear(n,10000), makeNumberNear(n,100000)].map(fmt);
+  return {
+    skillLabel:'Word-Form Charm',
+    question:'Which number matches this word form?',
+    answer:fmt(n),
+    options:makeOptions(fmt(n), distract),
+    visual:renderScroll(words),
+    hint:`<div class="hint-step">The words before <strong>thousand</strong> tell the thousands period.</div><div class="hint-step">The words after the comma tell the hundreds, tens, and ones.</div>`
+  };
+}
+
+function qTenTimes(){
+  const basePlace = [1,10,100,1000,10000][randInt(0,4)];
+  const digit = randInt(2,9);
+  const small = digit * basePlace;
+  const big = small * 10;
+  const opts = makeOptions(fmt(big), [fmt(small), fmt(big/10), fmt(big+small), fmt(big*10)].filter(x=>parseInt(unfmt(x))<=1000000));
+  return {
+    skillLabel:'Ten-Times Transfiguration',
+    question:`Professor McGonagall casts Engorgio on ${fmt(small)}. What is 10 times as much?`,
+    answer:fmt(big),
+    options:opts,
+    visual:renderScroll(`${fmt(small)} × 10 = ?`),
+    hint:`<div class="hint-step"><strong>Ten times</strong> means the value moves one place to the left.</div><div class="hint-step">${fmt(small)} becomes <strong>${fmt(big)}</strong>.</div>`
+  };
+}
+
+function qRounding(){
+  const place = [1000,10000,100000][randInt(0,2)];
+  let n = randInt(100000,999999);
+  if(n % place === place/2) n += 37;
+  const ans = roundTo(n, place);
+  const lower = Math.floor(n/place)*place;
+  const upper = lower + place;
+  const opts = makeOptions(fmt(ans), [fmt(lower), fmt(upper), fmt(ans + place), fmt(Math.max(0, ans-place))]);
+  const name = place === 1000 ? 'nearest thousand' : place === 10000 ? 'nearest ten thousand' : 'nearest hundred thousand';
+  return {
+    skillLabel:'Rounding Bridge',
+    question:`Round ${fmt(n)} to the ${name}.`,
+    answer:fmt(ans),
+    options:opts,
+    visual:renderNumberLine(n, place),
+    hint:`<div class="hint-step">Find the two ${name.replace('nearest ','')}s the number is between.</div><div class="hint-step">Use the midpoint: below the middle rounds down; at or above the middle rounds up.</div>`
+  };
+}
+
+function qCompare(){
+  const a = randomNumber();
+  let b = makeNumberNear(a, randInt(2000,40000));
+  if(a === b) b += 1000;
+  const ans = Math.max(a,b);
+  return {
+    skillLabel:'Greater-Than Duel',
+    question:`Which number is greater?`,
+    answer:fmt(ans),
+    options:shuffle([fmt(a), fmt(b)]),
+    visual:renderScroll(`${fmt(a)}   ⚔   ${fmt(b)}`),
+    hint:`<div class="hint-step">Compare from left to right: hundred thousands, then ten thousands, then thousands, and so on.</div><div class="hint-step">The first place where the digits differ decides the larger number.</div>`
+  };
+}
+
+function qOrder(){
+  const base = randInt(200000,800000);
+  const nums = shuffle([base, base+randInt(1000,9000), base+randInt(10000,50000)]).map(n=>Math.min(999999,n));
+  const sorted = nums.slice().sort((a,b)=>a-b);
+  const ans = sorted.map(fmt).join(' → ');
+  const wrong1 = nums.map(fmt).join(' → ');
+  const wrong2 = sorted.slice().reverse().map(fmt).join(' → ');
+  const wrong3 = [sorted[0], sorted[2], sorted[1]].map(fmt).join(' → ');
+  return {
+    skillLabel:'Ordering Staircase',
+    question:'Which list is ordered from least to greatest?',
+    answer:ans,
+    options:makeOptions(ans,[wrong1,wrong2,wrong3]),
+    visual:renderScroll(nums.map(fmt).join('   ·   ')),
+    hint:`<div class="hint-step">Least means smallest. Greatest means largest.</div><div class="hint-step">Compare the numbers from left to right and put them on the staircase from low to high.</div>`
+  };
+}
+
+function qRoundEstimate(){
+  const place = [10000,100000][randInt(0,1)];
+  const a = randInt(120000,780000);
+  const b = randInt(90000,190000);
+  const ar = roundTo(a,place);
+  const br = roundTo(b,place);
+  const ans = ar + br;
+  const placeName = place === 10000 ? 'nearest ten thousand' : 'nearest hundred thousand';
+  return {
+    skillLabel:'Estimation Spell',
+    question:`Round each number to the ${placeName}, then estimate the sum: ${fmt(a)} + ${fmt(b)}.`,
+    answer:fmt(ans),
+    options:makeOptions(fmt(ans), [fmt(a+b), fmt(ans+place), fmt(Math.max(place, ans-place))]),
+    visual:renderScroll(`${fmt(a)} + ${fmt(b)} ≈ ?`),
+    hint:`<div class="hint-step">First round each number to a simpler number.</div><div class="hint-step">Then add the rounded numbers: ${fmt(ar)} + ${fmt(br)}.</div>`
+  };
+}
+
+function checkAnswer(){
+  if(locked || !current) return;
+  const raw = document.getElementById('answerInput').value.trim();
+  if(!raw){
+    document.getElementById('feedback').className = 'feedback bad';
+    document.getElementById('feedback').textContent = 'Cast a spell tile or type an answer first.';
+    return;
+  }
+  locked = true;
+  const correct = normalize(raw) === normalize(current.answer);
+  const fb = document.getElementById('feedback');
+  if(correct){
+    streak++;
+    score += 10 + Math.min(streak-1,4)*2;
+    fb.className = 'feedback good';
+    fb.innerHTML = `✨ Correct! The lock clicks open. <span style="color:#f5d76e">+${10 + Math.min(streak-1,4)*2}</span>`;
+    popSpark('✨'); popSpark('🔓');
+  }else{
+    streak = 0;
+    wrong++;
+    score = Math.max(0, score - 2);
+    fb.className = 'feedback bad';
+    fb.innerHTML = `🐉 Not this time. Correct answer: <span style="color:#fff5bf">${current.answer}</span>`;
+    popSpark('🔥');
+  }
+  document.getElementById('scoreBox').textContent = score;
+  document.getElementById('streakBox').textContent = streak;
+  renderDragon();
+  addHistory(raw, correct);
+  setTimeout(loadQuestion, correct ? 1250 : 2300);
+}
+
+function addHistory(user, correct){
+  historyLog.push({
+    time:new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}),
+    skill:current.skillLabel,
+    question:current.question,
+    user:user,
+    answer:current.answer,
+    correct:correct
+  });
+  localStorage.setItem('millionVaultHistory', JSON.stringify(historyLog.slice(-80)));
+  renderHistory();
+}
+
+function renderHistory(){
+  const html = historyLog.length ? historyLog.slice().reverse().slice(0,30).map(h=>`<div class="history-line"><strong>${h.skill}</strong>: ${h.question}<br>you: ${h.user} <span class="${h.correct?'ok':'no'}">${h.correct?'✓':'✗'}</span>${h.correct?'':` <span class="history-meta">answer ${h.answer}</span>`}<div class="history-meta">${h.time}</div></div>`).join('') : '<div class="history-meta">No quests yet.</div>';
+  ['historyLines','homeHistoryLines','endHistoryLines'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=html; });
+}
+
+function toggleHint(){
+  const body = document.getElementById('hintBody');
+  const chev = document.getElementById('hintChevron');
+  const open = !body.classList.contains('active');
+  body.classList.toggle('active', open);
+  chev.textContent = open ? '▲' : '▼';
+}
+
+function toggleHistory(where){
+  const id = where === 'home' ? 'homeHistory' : where === 'end' ? 'endHistory' : 'gameHistory';
+  const chevId = where === 'home' ? 'homeChevron' : where === 'end' ? 'endChevron' : 'gameChevron';
+  const body = document.getElementById(id);
+  const chev = document.getElementById(chevId);
+  const open = !body.classList.contains('active');
+  body.classList.toggle('active', open);
+  if(chev) chev.textContent = open ? '▲' : '▼';
+}
+
+function resetHistory(){
+  if(confirm('Clear the Quest Ledger?')){
+    historyLog=[];
+    localStorage.removeItem('millionVaultHistory');
+    renderHistory();
+  }
+}
+
+function endGame(){
+  document.getElementById('gameScreen').classList.add('hidden');
+  document.getElementById('endScreen').classList.remove('hidden');
+  const correct = historyLog.slice(-10).filter(h=>h.correct).length;
+  document.getElementById('endSummary').textContent = `${correct}/10 locks opened · ${score} House Points`;
+  let msg = 'The vault groans open and the goblins nod with respect.';
+  if(correct <= 5) msg = 'The dragon is still circling, but every lock taught a new spell. Try again to tame the vault.';
+  if(correct >= 9) msg = 'Brilliant! The Million-Vault bursts open in a shower of gold sparks.';
+  document.getElementById('endMessage').textContent = msg;
+  renderHistory();
+}
+
+document.addEventListener('mousemove', e=>{
+  const arena = document.getElementById('arena');
+  if(!arena) return;
+  const r = arena.getBoundingClientRect();
+  arena.style.setProperty('--spark-x', ((e.clientX-r.left)/r.width*100) + '%');
+  arena.style.setProperty('--spark-y', ((e.clientY-r.top)/r.height*100) + '%');
+});
+
+window.addEventListener('load', ()=>{
+  try{ historyLog = JSON.parse(localStorage.getItem('millionVaultHistory') || '[]'); }catch(e){ historyLog=[]; }
+  renderHistory();
+});
+</script>
+</body>
+</html>
