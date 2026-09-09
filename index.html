@@ -244,7 +244,7 @@
       <p class="tagline">Break ten enchanted locks before the Gringotts dragon wakes.</p>
       <p class="mission">Use place value, expanded form, standard form, word form, ten-times thinking, rounding, comparing, and ordering numbers up to 1,000,000.</p>
       <div class="mini-grid">
-        <div class="feature"><strong>🔢 Place Value</strong>Find the value of a digit.</div>
+        <div class="feature"><strong>🔢 Place Value</strong>Find the place and value of a digit.</div>
         <div class="feature"><strong>📜 Forms</strong>Standard, expanded, and word form.</div>
         <div class="feature"><strong>⚡ Ten Times</strong>Move one place left.</div>
         <div class="feature"><strong>🧭 Rounding</strong>Use a number line to estimate.</div>
@@ -499,15 +499,31 @@ function qPlaceValue(){
   let ds = digitsOf(n);
   let idx;
   do { idx = randInt(0,5); } while(ds[idx] === 0);
-  const value = ds[idx] * placeValues[idx];
-  const distract = [ds[idx], placeValues[idx], value/10, value*10].filter(v=>v>0 && v<=900000).map(fmt);
+  const digit = ds[idx];
+  const place = placeNames[idx];
+  const value = digit * placeValues[idx];
+  const askValue = Math.random() < 0.5;
+
+  if (!askValue) {
+    const placeDistractors = placeNames.filter((_, i) => i !== idx);
+    return {
+      skillLabel:'Place Value Lock',
+      question:`In ${fmt(n)}, the highlighted ${digit} is in which place?`,
+      answer:place,
+      options:makeOptions(place, placeDistractors),
+      visual:renderPlaceTable(n, idx),
+      hint:`<div class="hint-step"><strong>Find the column.</strong> Look straight down from the highlighted ${digit} to the place-value label.</div><div class="hint-step">The highlighted ${digit} is in the <strong>${place}</strong> place.</div>`
+    };
+  }
+
+  const distract = [digit, placeValues[idx], value/10, value*10].filter(v=>v>0 && v<=900000).map(fmt);
   return {
-    skillLabel:'Place Value Lock',
-    question:`The highlighted digit is ${ds[idx]} in ${fmt(n)}?`,
+    skillLabel:'Digit Value Lock',
+    question:`In ${fmt(n)}, what is the value of the highlighted ${digit}?`,
     answer:fmt(value),
     options:makeOptions(fmt(value), distract),
     visual:renderPlaceTable(n, idx),
-    hint:`<div class="hint-step"><strong>Find the column first.</strong> The digit ${ds[idx]} is in the <strong>${placeNames[idx]}</strong> place.</div><div class="hint-step">Its value is <strong>${ds[idx]} × ${fmt(placeValues[idx])}</strong>.</div>`
+    hint:`<div class="hint-step"><strong>Find the column first.</strong> The highlighted ${digit} is in the <strong>${place}</strong> place.</div><div class="hint-step">Its value is <strong>${digit} × ${fmt(placeValues[idx])} = ${fmt(value)}</strong>.</div>`
   };
 }
 
