@@ -227,12 +227,96 @@
   .final-card{max-width:760px;margin:18px auto;padding:20px;border-radius:22px;background:var(--panel);border:1px solid rgba(245,215,110,.3);box-shadow:0 20px 60px rgba(0,0,0,.35);}
   .spark-pop{position:absolute;pointer-events:none;animation:pop .7s ease-out forwards;font-size:24px;}
   @keyframes pop{from{opacity:1;transform:translate(-50%,-50%) scale(.7);}to{opacity:0;transform:translate(-50%,-120%) scale(1.5);}}
+
+  .match-board{
+    display:grid;
+    grid-template-columns:1.2fr .9fr;
+    gap:16px;
+    width:min(100%,930px);
+    margin:0 auto;
+    align-items:start;
+  }
+  .match-column{
+    background:rgba(255,255,255,.055);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:18px;
+    padding:12px;
+  }
+  .match-heading{
+    color:#f7d774;
+    font-weight:950;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-size:13px;
+    margin:2px 0 10px;
+  }
+  .match-card{
+    width:100%;
+    display:block;
+    margin:7px 0;
+    padding:11px 12px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.09);
+    color:#fff;
+    font-size:clamp(15px,2vw,20px);
+    font-weight:900;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 7px 14px rgba(0,0,0,.18);
+  }
+  .match-card.left{
+    color:#241706;
+    background:linear-gradient(180deg,#f7e8b5,#d8b96d);
+    border-color:#9b6c18;
+  }
+  .match-card.selected{
+    outline:4px solid rgba(90,200,250,.72);
+    transform:translateY(-1px);
+    box-shadow:0 0 18px rgba(90,200,250,.32),0 7px 14px rgba(0,0,0,.18);
+  }
+  .match-card.matched{
+    opacity:.42;
+    text-decoration:line-through;
+    pointer-events:none;
+  }
+  .match-card.left.matched:after,
+  .match-card.right.matched:after{
+    content:'  ✓';
+    color:#7be495;
+    font-weight:950;
+    text-decoration:none;
+  }
+  .match-card.leftover{
+    background:linear-gradient(135deg,#f5d76e,#ffcc33);
+    color:#201000;
+    border-color:#fff1a8;
+    animation:pulse 1s ease-in-out infinite alternate;
+  }
+  .match-status{
+    margin:10px auto 0;
+    padding:10px 12px;
+    max-width:820px;
+    border-radius:14px;
+    background:rgba(90,200,250,.12);
+    border:1px solid rgba(90,200,250,.24);
+    color:#e9f8ff;
+    font-weight:800;
+    line-height:1.4;
+  }
+  .match-mini{
+    font-size:13px;
+    color:#d7cff6;
+    margin-top:6px;
+  }
+
   @media(max-width:760px){
     .hud{grid-template-columns:repeat(2,minmax(130px,1fr));}
     .options{grid-template-columns:1fr;}
     .place-table{grid-template-columns:repeat(3,minmax(85px,1fr));}
     .mini-grid{grid-template-columns:1fr 1fr;}
     .question{font-size:23px;}
+    .match-board{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -323,17 +407,18 @@ let wrong = 0;
 let current = null;
 let locked = false;
 let historyLog = [];
+let matchState = null;
 const totalRounds = 10;
 
 const placeNames = ["hundred thousands", "ten thousands", "thousands", "hundreds", "tens", "ones"];
 const placeValues = [100000,10000,1000,100,10,1];
-const skillOrder = ["place", "expandedToStandard", "standardToExpanded", "wordToStandard", "tenTimes", "rounding", "compare", "order", "roundEstimate", "finalMix"];
+const skillOrder = ["place", "expandedToStandard", "standardToExpanded", "wordToStandard", "tenTimes", "rounding", "compare", "order", "roundEstimate", "scrollMatch"];
 
 function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]); }
 function fmt(n){ return Number(n).toLocaleString('en-US'); }
 function unfmt(s){ return String(s || '').replace(/,/g,'').replace(/\s+/g,'').toLowerCase(); }
-function normalize(s){ return unfmt(s).replace(/–|—/g,'-').replace(/\+/g,'plus').replace(/=/g,'equals'); }
+function normalize(s){ return String(s || '').toLowerCase().replace(/,/g,'').replace(/–|—|-/g,'').replace(/\band\b/g,'').replace(/\s+/g,'').replace(/\+/g,'plus').replace(/=/g,'equals').replace(/[^a-z0-9/]/g,''); }
 function digitsOf(n){ return String(n).padStart(6,'0').split('').map(Number); }
 function randomNumber(){ return randInt(102345,987654); }
 function randomFriendlyNumber(){ return [100,120,150,160,180,200,240,250,300,400,500,600,750,800,900][randInt(0,14)] * 1000 / 1000; }
@@ -438,7 +523,7 @@ function popSpark(text){
 }
 
 function startGame(){
-  score = 0; streak = 0; round = 0; wrong = 0; locked = false; current = null;
+  score = 0; streak = 0; round = 0; wrong = 0; locked = false; current = null; matchState = null;
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
   document.getElementById('gameScreen').classList.remove('hidden');
@@ -455,6 +540,7 @@ function loadQuestion(){
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'feedback';
   document.getElementById('answerInput').value = '';
+  document.getElementById('answerInput').placeholder = 'Type an answer or choose a spell tile';
   renderDragon();
   renderLocks();
 
@@ -466,6 +552,7 @@ function loadQuestion(){
   document.getElementById('hintBody').innerHTML = current.hint || '';
   document.getElementById('hintBody').classList.remove('active');
   document.getElementById('hintChevron').textContent = '▼';
+  if(current.placeholder) document.getElementById('answerInput').placeholder = current.placeholder;
   renderOptions(current.options || []);
 }
 
@@ -491,6 +578,7 @@ function buildQuestion(skill){
   if(skill === 'compare') return qCompare();
   if(skill === 'order') return qOrder();
   if(skill === 'roundEstimate') return qRoundEstimate();
+  if(skill === 'scrollMatch') return qScrollMatch();
   return qPlaceValue();
 }
 
@@ -657,16 +745,128 @@ function qRoundEstimate(){
   };
 }
 
+
+function renderMatchQuestHTML(){
+  if(!matchState) return '';
+  const left = matchState.pairs.map((p,i)=>{
+    const cls = ['match-card','left'];
+    if(matchState.selectedLeft === i) cls.push('selected');
+    if(matchState.matched[i]) cls.push('matched');
+    return `<button type="button" class="${cls.join(' ')}" onclick="selectMatchLeft(${i})">${p.encoded}</button>`;
+  }).join('');
+  const right = matchState.rightNumbers.map(n=>{
+    const cls = ['match-card','right'];
+    if(isRightMatched(n)) cls.push('matched');
+    if(matchState.completed && n === matchState.leftover) cls.push('leftover');
+    return `<button type="button" class="${cls.join(' ')}" onclick="tryMatchRight(${n})">${fmt(n)}</button>`;
+  }).join('');
+  return `<div class="match-board">
+    <div class="match-column"><div class="match-heading">Encoded scrolls</div>${left}</div>
+    <div class="match-column"><div class="match-heading">Standard-form numbers</div>${right}</div>
+  </div>
+  <div class="match-status">${matchState.message || 'Click one encoded scroll, then click its matching standard-form number.'}
+    <div class="match-mini">When every scroll is matched, one number will remain. Write that leftover number in words to open the final lock.</div>
+  </div>`;
+}
+
+function refreshMatchQuest(){
+  const v = document.getElementById('visual');
+  if(v) v.innerHTML = renderMatchQuestHTML();
+  const input = document.getElementById('answerInput');
+  if(input) input.placeholder = matchState && matchState.completed ? 'Write the leftover number in words' : 'Finish the matches first';
+}
+
+function isRightMatched(n){
+  if(!matchState) return false;
+  return Object.values(matchState.matched).some(v => Number(v) === Number(n));
+}
+
+function selectMatchLeft(i){
+  if(locked || !matchState || matchState.completed) return;
+  if(matchState.matched[i]) return;
+  matchState.selectedLeft = i;
+  matchState.message = 'Good. Now choose the standard-form number that means the same thing.';
+  refreshMatchQuest();
+}
+
+function tryMatchRight(n){
+  if(locked || !matchState || matchState.completed) return;
+  if(isRightMatched(n)) return;
+  if(matchState.selectedLeft === null || matchState.selectedLeft === undefined){
+    matchState.message = 'Choose an encoded scroll first, then choose its number.';
+    refreshMatchQuest();
+    return;
+  }
+  const i = matchState.selectedLeft;
+  const target = matchState.pairs[i].number;
+  if(Number(n) === Number(target)){
+    matchState.matched[i] = n;
+    matchState.selectedLeft = null;
+    popSpark('✓');
+    const done = Object.keys(matchState.matched).length === matchState.pairs.length;
+    if(done){
+      matchState.completed = true;
+      matchState.message = `Brilliant. The only number left is ${fmt(matchState.leftover)}. Now write it in words.`;
+      document.getElementById('answerInput').value = '';
+    }else{
+      matchState.message = 'Correct match. Keep clearing the scrolls.';
+    }
+  }else{
+    matchState.message = 'Not that one. Compare the place-value parts and try again.';
+    popSpark('✦');
+  }
+  refreshMatchQuest();
+}
+
+function qScrollMatch(){
+  const pairs = [
+    { encoded:'one hundred thousand', number:100000 },
+    { encoded:'one million', number:1000000 },
+    { encoded:'five hundred thousand, fifty', number:500050 },
+    { encoded:'50,000 + 50 + 5', number:50055 },
+    { encoded:'500,000 + 5,000 + 50', number:505050 },
+    { encoded:'500,000 + 500 + 5', number:500505 }
+  ];
+  const leftover = 505055;
+  matchState = {
+    pairs:shuffle(pairs),
+    rightNumbers:shuffle([...pairs.map(p=>p.number), leftover]),
+    leftover:leftover,
+    selectedLeft:null,
+    matched:{},
+    completed:false,
+    message:'Click one encoded scroll, then click its matching standard-form number.'
+  };
+  const words = numberToWords(leftover);
+  return {
+    kind:'matchQuest',
+    skillLabel:'Final Scroll Match',
+    question:'Match each encoded scroll to its standard-form number. One number will be left. Write the leftover number in words.',
+    answer:words,
+    acceptableAnswers:[words, fmt(leftover), String(leftover)],
+    options:[],
+    visual:renderMatchQuestHTML(),
+    placeholder:'Finish the matches first',
+    hint:`<div class="hint-step"><strong>Match in pieces.</strong> For example, 500,000 + 5,000 + 50 means 505,050.</div><div class="hint-step">After all six scrolls are matched, look for the only standard-form number with no partner.</div><div class="hint-step">Then write that leftover number in word form.</div>`
+  };
+}
+
 function checkAnswer(){
   if(locked || !current) return;
   const raw = document.getElementById('answerInput').value.trim();
+  if(current.kind === 'matchQuest' && matchState && !matchState.completed){
+    document.getElementById('feedback').className = 'feedback bad';
+    document.getElementById('feedback').textContent = 'Match all the scrolls first. Then write the leftover number in words.';
+    return;
+  }
   if(!raw){
     document.getElementById('feedback').className = 'feedback bad';
     document.getElementById('feedback').textContent = 'Cast a spell tile or type an answer first.';
     return;
   }
   locked = true;
-  const correct = normalize(raw) === normalize(current.answer);
+  const acceptable = current.acceptableAnswers || [current.answer];
+  const correct = acceptable.some(ans => normalize(raw) === normalize(ans));
   const fb = document.getElementById('feedback');
   if(correct){
     streak++;
